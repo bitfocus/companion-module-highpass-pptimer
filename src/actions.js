@@ -84,6 +84,36 @@ export function UpdateActions(self) {
 			},
 		},
 
+		speed_adjust: {
+			name: 'Speed: run faster / slower',
+			description:
+				'Changes how fast the countdown runs, without the presenter seeing it (e.g. 105% makes 10:00 last 9:31). Set, reset and restart go back to 100%.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'direction',
+					label: 'Direction',
+					default: 'faster',
+					choices: [
+						{ id: 'faster', label: 'Faster' },
+						{ id: 'slower', label: 'Slower' },
+					],
+				},
+				{ type: 'number', id: 'step', label: 'Step (%)', default: 5, min: 0.1, max: 50, step: 0.5 },
+			],
+			callback: ({ options }) => {
+				const step = Math.abs(Number(options.step) || 0)
+				self.sendCommand('speed', { step: options.direction === 'slower' ? -step : step })
+			},
+		},
+
+		speed_set: {
+			name: 'Speed: set',
+			description: '100% = real time. 50–200%.',
+			options: [{ type: 'number', id: 'percent', label: 'Speed (%)', default: 100, min: 50, max: 200, step: 0.5 }],
+			callback: ({ options }) => self.sendCommand('speed', { percent: Number(options.percent) }),
+		},
+
 		overlay: {
 			name: 'Overlay show / hide',
 			options: [

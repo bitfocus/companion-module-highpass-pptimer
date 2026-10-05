@@ -9,6 +9,8 @@ const DEFINITIONS = {
 	running: { name: 'Running (true / false)' },
 	overlay_visible: { name: 'Overlay visible (true / false)' },
 	presenter_view: { name: 'Presenter view detected (true / false)' },
+	speed: { name: 'Speed ("100%", "105%")' },
+	speed_percent: { name: 'Speed in % of real time (100 = normal)' },
 }
 
 export function UpdateVariableDefinitions(self) {
@@ -28,8 +30,11 @@ export function variableValuesFromState(state) {
 			running: false,
 			overlay_visible: false,
 			presenter_view: false,
+			speed: '--',
+			speed_percent: undefined,
 		}
 	}
+	const speed = state.speedPercent ?? 100
 	return {
 		remaining: state.display,
 		remaining_seconds: state.remainingSeconds,
@@ -41,5 +46,7 @@ export function variableValuesFromState(state) {
 		running: state.running,
 		overlay_visible: state.visible,
 		presenter_view: state.presenterView,
+		speed: `${speed}%`,
+		speed_percent: speed,
 	}
 }

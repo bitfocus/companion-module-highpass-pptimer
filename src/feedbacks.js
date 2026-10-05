@@ -72,6 +72,36 @@ export function UpdateFeedbacks(self) {
 			callback: () => self.state?.presenterView === true,
 		},
 
+		speed: {
+			type: 'boolean',
+			name: 'Speed changed',
+			description: 'Whether the countdown runs faster or slower than real time',
+			defaultStyle: {
+				bgcolor: combineRgb(150, 60, 160),
+				color: combineRgb(255, 255, 255),
+			},
+			options: [
+				{
+					type: 'dropdown',
+					id: 'mode',
+					label: 'When',
+					default: 'changed',
+					choices: [
+						{ id: 'changed', label: 'Not 100%' },
+						{ id: 'faster', label: 'Faster than 100%' },
+						{ id: 'slower', label: 'Slower than 100%' },
+					],
+				},
+			],
+			callback: ({ options }) => {
+				const speed = self.state?.speedPercent
+				if (speed === undefined) return false
+				if (options.mode === 'faster') return speed > 100
+				if (options.mode === 'slower') return speed < 100
+				return speed !== 100
+			},
+		},
+
 		feature: {
 			type: 'boolean',
 			name: 'Feature enabled',

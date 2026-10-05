@@ -48,6 +48,33 @@ export function UpdatePresets(self) {
 		sub_1m: button('−1 min', [action('add', { direction: 'subtract', time: '1:00' })]),
 		add_10s: button('+10 s', [action('add', { direction: 'add', time: '10' })]),
 		sub_10s: button('−10 s', [action('add', { direction: 'subtract', time: '10' })]),
+		speed_faster: button('FASTER\\n+5%', [action('speed_adjust', { direction: 'faster', step: 5 })], {
+			feedbacks: [{ feedbackId: 'speed', options: { mode: 'faster' }, style: { bgcolor: combineRgb(150, 60, 160) } }],
+		}),
+		speed_slower: button('SLOWER\\n−5%', [action('speed_adjust', { direction: 'slower', step: 5 })], {
+			feedbacks: [{ feedbackId: 'speed', options: { mode: 'slower' }, style: { bgcolor: combineRgb(40, 100, 170) } }],
+		}),
+		speed_faster_1: button('FASTER\\n+1%', [action('speed_adjust', { direction: 'faster', step: 1 })], {
+			feedbacks: [{ feedbackId: 'speed', options: { mode: 'faster' }, style: { bgcolor: combineRgb(150, 60, 160) } }],
+		}),
+		speed_slower_1: button('SLOWER\\n−1%', [action('speed_adjust', { direction: 'slower', step: 1 })], {
+			feedbacks: [{ feedbackId: 'speed', options: { mode: 'slower' }, style: { bgcolor: combineRgb(40, 100, 170) } }],
+		}),
+		speed_normal: button('SPEED\\n' + v('speed'), [action('speed_set', { percent: 100 })], {
+			style: { color: combineRgb(160, 160, 160) },
+			feedbacks: [
+				{
+					feedbackId: 'speed',
+					options: { mode: 'faster' },
+					style: { bgcolor: combineRgb(150, 60, 160), color: WHITE },
+				},
+				{
+					feedbackId: 'speed',
+					options: { mode: 'slower' },
+					style: { bgcolor: combineRgb(40, 100, 170), color: WHITE },
+				},
+			],
+		}),
 		overlay_toggle: button('OVERLAY', [action('overlay', { mode: 'togglevisible' })], {
 			feedbacks: [{ feedbackId: 'overlay_visible', options: {}, style: { bgcolor: combineRgb(0, 90, 170) } }],
 		}),
@@ -95,6 +122,11 @@ export function UpdatePresets(self) {
 				id: 'adjust',
 				name: 'Adjust time',
 				definitions: ['add_1m', 'sub_1m', 'add_10s', 'sub_10s'],
+			},
+			{
+				id: 'speed',
+				name: 'Speed (hidden from the presenter)',
+				definitions: ['speed_slower', 'speed_normal', 'speed_faster', 'speed_slower_1', 'speed_faster_1'],
 			},
 			{
 				id: 'features',
