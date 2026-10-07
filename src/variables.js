@@ -8,7 +8,9 @@ const DEFINITIONS = {
 	status: { name: 'Status (running / paused / offline)' },
 	running: { name: 'Running (true / false)' },
 	overlay_visible: { name: 'Overlay visible (true / false)' },
-	presenter_view: { name: 'Presenter view detected (true / false)' },
+	presenter_view: { name: 'Timer placed: presenter view or screen found (true / false)' },
+	layout: { name: 'Active layout (PPTimer 1.1.0+)' },
+	target: { name: 'What the timer is on, e.g. "PowerPoint presenter view" (empty when not found)' },
 	speed: { name: 'Speed ("100%", "105%")' },
 	speed_percent: { name: 'Speed in % of real time (100 = normal)' },
 }
@@ -30,6 +32,8 @@ export function variableValuesFromState(state) {
 			running: false,
 			overlay_visible: false,
 			presenter_view: false,
+			layout: '',
+			target: '',
 			speed: '--',
 			speed_percent: undefined,
 		}
@@ -48,6 +52,8 @@ export function variableValuesFromState(state) {
 		running: state.running,
 		overlay_visible: state.visible,
 		presenter_view: state.presenterView,
+		layout: state.layout ?? '',
+		target: state.target ?? '',
 		speed: `${speed}%`,
 		speed_percent: speed,
 	}

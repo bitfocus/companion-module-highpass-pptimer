@@ -5,9 +5,18 @@ export const FEATURES = [
 	{ id: 'countUp', label: 'Count up after zero' },
 	{ id: 'showMinus', label: 'Show "-" while over time' },
 	{ id: 'soundEnabled', label: 'Sound at zero' },
-	{ id: 'transparentBackground', label: 'Transparent background' },
-	{ id: 'textOutline', label: 'Dark outline around digits' },
+	{ id: 'transparentBackground', label: 'Transparent background (active layout)' },
+	{ id: 'textOutline', label: 'Dark outline around digits (active layout)' },
+	{ id: 'blackout', label: 'Black screen behind the timer (active layout, PPTimer 1.1.0+)' },
 ]
+
+/** Layouts saved in PPTimer 1.1.0+ (as last reported), or the ones it starts with. */
+export const DEFAULT_LAYOUTS = ['PowerPoint', 'Keynote', 'Screen', 'Fullscreen']
+
+export function layoutChoices(self) {
+	const names = self.layoutNames?.length ? self.layoutNames : DEFAULT_LAYOUTS
+	return names.map((name) => ({ id: name, label: name }))
+}
 
 /** "90", "3:00" or "1:05:00" to whole seconds; null if empty or invalid (e.g. "1:", "5:75"). */
 export function parseTime(text) {
@@ -146,9 +155,45 @@ export function UpdateActions(self) {
 			callback: ({ options }) => self.sendCommand(options.mode),
 		},
 
+		layout_select: {
+			name: 'Layout: select',
+			description:
+				'Switches to a layout saved in PPTimer 1.1.0+: where the timer is shown (PowerPoint / Keynote presenter view, or a screen), its position and look. Create and edit layouts on the PPTimer web page.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'name',
+					label: 'Layout',
+					default: layoutChoices(self)[0].id,
+					choices: layoutChoices(self),
+					allowCustom: true,
+				},
+			],
+			callback: ({ options }) => self.sendCommand('layout', { name: String(options.name ?? '').trim() }),
+		},
+
+		layout_step: {
+			name: 'Layout: next / previous',
+			description: 'Cycles through the layouts saved in PPTimer 1.1.0+.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'direction',
+					label: 'Direction',
+					default: 'next',
+					choices: [
+						{ id: 'next', label: 'Next' },
+						{ id: 'previous', label: 'Previous' },
+					],
+				},
+			],
+			callback: ({ options }) => self.sendCommand('layout', { step: options.direction === 'previous' ? -1 : 1 }),
+		},
+
 		layout: {
-			name: 'Overlay position / size',
-			description: 'In % of the presenter view. Easiest to set by dragging on the PPTimer web page.',
+			name: 'Overlay position / size (active layout)',
+			description:
+				'In % of the presenter view or screen, saved in the active layout. Easiest to set by dragging on the PPTimer web page.',
 			options: [
 				{ type: 'number', id: 'xPercent', label: 'Left (%)', default: 22, min: 0, max: 100 },
 				{ type: 'number', id: 'yPercent', label: 'Top (%)', default: 74, min: 0, max: 100 },

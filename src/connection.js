@@ -125,8 +125,19 @@ export class TimerConnection {
 
 /** The fields the add-in compares to decide whether a state is new (its ChangeKey). */
 function stateKey(state) {
-	const { display, phase, running, visible, presenterView, presenterWidth, presenterHeight, durationMs, speedPercent } =
-		state
+	const {
+		display,
+		phase,
+		running,
+		visible,
+		presenterView,
+		presenterWidth,
+		presenterHeight,
+		durationMs,
+		speedPercent,
+		layout,
+		target,
+	} = state
 	return JSON.stringify([
 		display,
 		phase,
@@ -137,5 +148,7 @@ function stateKey(state) {
 		presenterHeight,
 		durationMs,
 		speedPercent,
+		layout,
+		target,
 	])
 }

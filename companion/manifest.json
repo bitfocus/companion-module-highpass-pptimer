@@ -4,7 +4,7 @@
 	"id": "highpass-pptimer",
 	"name": "pptimer",
 	"shortname": "pptimer",
-	"description": "Control countdown timer overlay on the PowerPoint presenter view (PPTimer add-in)",
+	"description": "Control the PPTimer countdown on the PowerPoint / Keynote presenter view or any screen (Windows and Mac)",
 	"version": "0.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-highpass-pptimer.git",
@@ -23,6 +23,6 @@
 	},
 	"legacyIds": [],
 	"manufacturer": "Highpass",
-	"products": ["PowerPoint Presenter View Timer"],
-	"keywords": ["powerpoint", "timer", "countdown", "presenter", "highpass"]
+	"products": ["PowerPoint / Keynote Presenter View Timer"],
+	"keywords": ["powerpoint", "keynote", "timer", "countdown", "presenter", "highpass"]
 }

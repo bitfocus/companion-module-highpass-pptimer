@@ -15,6 +15,7 @@ export default class PPTimerInstance extends InstanceBase {
 		this.state = null
 		this.settings = null
 		this.commands = []
+		this.layoutNames = []
 		this.connection = null
 	}
 
@@ -47,12 +48,12 @@ export default class PPTimerInstance extends InstanceBase {
 				width: 12,
 				label: '',
 				value:
-					'Connects to the PPTimer PowerPoint add-in. Port and token are in %LOCALAPPDATA%\\PPTimer\\config.json on the presentation PC.',
+					'Connects to PPTimer on the presentation computer (Windows app or Mac app). Port and token are in its config.json: %LOCALAPPDATA%\\PPTimer on Windows, ~/Library/Application Support/PPTimer on a Mac.',
 			},
 			{
 				type: 'textinput',
 				id: 'host',
-				label: 'PowerPoint PC (IP or hostname)',
+				label: 'Presentation computer (IP or hostname)',
 				width: 8,
 				default: '',
 				regex: Regex.HOSTNAME,
@@ -83,7 +84,7 @@ export default class PPTimerInstance extends InstanceBase {
 
 		const host = (this.config.host || '').trim()
 		if (!host) {
-			this.updateStatus(InstanceStatus.BadConfig, 'Set the PowerPoint PC address')
+			this.updateStatus(InstanceStatus.BadConfig, 'Set the presentation computer address')
 			return
 		}
 
@@ -111,7 +112,8 @@ export default class PPTimerInstance extends InstanceBase {
 			case 'hello':
 				this.settings = msg.settings
 				this.commands = Array.isArray(msg.commands) ? msg.commands : []
-				this.checkFeedbacks('feature')
+				this.updateLayouts()
+				this.checkFeedbacks('feature', 'layout')
 				this.log(
 					'info',
 					`Connected to PPTimer ${msg.version}${msg.lanAccess ? '' : ' (warning: add-in reports localhost-only)'}`,
@@ -119,7 +121,8 @@ export default class PPTimerInstance extends InstanceBase {
 				break
 			case 'settings':
 				this.settings = msg.settings
-				this.checkFeedbacks('feature')
+				this.updateLayouts()
+				this.checkFeedbacks('feature', 'layout')
 				break
 			case 'state':
 				this.setState(msg)
@@ -135,6 +138,17 @@ export default class PPTimerInstance extends InstanceBase {
 				}
 				break
 		}
+	}
+
+	/** Layout names offered in actions, feedbacks and presets follow the ones saved in PPTimer (1.1.0+). */
+	updateLayouts() {
+		const layouts = this.settings?.layouts
+		const names = Array.isArray(layouts) ? layouts.map((l) => String(l.name)) : []
+		if (names.length === 0 || JSON.stringify(names) === JSON.stringify(this.layoutNames)) return
+		this.layoutNames = names
+		this.updateActions()
+		this.updateFeedbacks()
+		this.updatePresets()
 	}
 
 	setState(state) {

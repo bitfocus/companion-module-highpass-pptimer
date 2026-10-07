@@ -1,5 +1,5 @@
 import { combineRgb } from '@companion-module/base'
-import { FEATURES } from './actions.js'
+import { FEATURES, layoutChoices } from './actions.js'
 
 export function UpdateFeedbacks(self) {
 	self.setFeedbackDefinitions({
@@ -62,8 +62,9 @@ export function UpdateFeedbacks(self) {
 
 		presenter_view: {
 			type: 'boolean',
-			name: 'Presenter view detected',
-			description: 'True while PowerPoint is in a slide show with presenter view open',
+			name: 'Timer placed (presenter view / screen found)',
+			description:
+				"True while the active layout's target is there: the presenter view during a slide show, or the layout's screen",
 			defaultStyle: {
 				bgcolor: combineRgb(0, 120, 60),
 				color: combineRgb(255, 255, 255),
@@ -111,6 +112,36 @@ export function UpdateFeedbacks(self) {
 			},
 			options: [{ type: 'dropdown', id: 'feature', label: 'Feature', default: 'soundEnabled', choices: FEATURES }],
 			callback: ({ options }) => self.settings?.[options.feature] === true,
+		},
+
+		layout: {
+			type: 'boolean',
+			name: 'Layout active',
+			description: 'PPTimer 1.1.0+',
+			defaultStyle: {
+				bgcolor: combineRgb(0, 90, 170),
+				color: combineRgb(255, 255, 255),
+			},
+			options: [
+				{
+					type: 'dropdown',
+					id: 'name',
+					label: 'Layout',
+					default: layoutChoices(self)[0].id,
+					choices: layoutChoices(self),
+					allowCustom: true,
+				},
+			],
+			callback: ({ options }) => {
+				const active = self.state?.layout ?? self.settings?.layout
+				return (
+					typeof active === 'string' &&
+					active.toLowerCase() ===
+						String(options.name ?? '')
+							.trim()
+							.toLowerCase()
+				)
+			},
 		},
 
 		disconnected: {

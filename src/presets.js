@@ -1,5 +1,5 @@
 import { combineRgb } from '@companion-module/base'
-import { FEATURES } from './actions.js'
+import { FEATURES, layoutChoices } from './actions.js'
 
 const WHITE = combineRgb(255, 255, 255)
 const BLACK = combineRgb(0, 0, 0)
@@ -78,6 +78,9 @@ export function UpdatePresets(self) {
 		overlay_toggle: button('OVERLAY', [action('overlay', { mode: 'togglevisible' })], {
 			feedbacks: [{ feedbackId: 'overlay_visible', options: {}, style: { bgcolor: combineRgb(0, 90, 170) } }],
 		}),
+		layout_next: button('LAYOUT\\n' + v('layout'), [action('layout_step', { direction: 'next' })], {
+			style: { size: '14' },
+		}),
 		presenter_status: button('PRESENTER\\nVIEW', [], {
 			style: { color: combineRgb(160, 160, 160) },
 			feedbacks: [
@@ -100,6 +103,7 @@ export function UpdatePresets(self) {
 		soundEnabled: 'SOUND\\nAT 0',
 		transparentBackground: 'TRANSP.\\nBG',
 		textOutline: 'OUTLINE',
+		blackout: 'BLACK\\nSCREEN',
 	}
 	for (const { id } of FEATURES) {
 		presets[`feature_${id}`] = button(shortNames[id], [action('feature', { feature: id, mode: 'toggle' })], {
@@ -110,6 +114,16 @@ export function UpdatePresets(self) {
 		})
 	}
 	presets.testsound = button('TEST\\nSOUND', [action('testsound')])
+
+	const layouts = layoutChoices(self)
+	layouts.forEach(({ id: name }, i) => {
+		presets[`layout_${i}`] = button(name.toUpperCase(), [action('layout_select', { name })], {
+			style: { color: combineRgb(160, 160, 160) },
+			feedbacks: [
+				{ feedbackId: 'layout', options: { name }, style: { bgcolor: combineRgb(0, 90, 170), color: WHITE } },
+			],
+		})
+	})
 
 	self.setPresetDefinitions(
 		[
@@ -137,6 +151,11 @@ export function UpdatePresets(self) {
 				id: 'durations',
 				name: 'Set duration',
 				definitions: durations.map((m) => `set_${m}`),
+			},
+			{
+				id: 'layouts',
+				name: 'Layouts (PPTimer 1.1.0+)',
+				definitions: ['layout_next', ...layouts.map((_, i) => `layout_${i}`)],
 			},
 		],
 		presets,
