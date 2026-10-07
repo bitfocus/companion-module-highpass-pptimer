@@ -200,13 +200,18 @@ export function UpdateActions(self) {
 				},
 			],
 			callback: ({ options }) => {
+				// PPTimer 1.0.3+ flips the setting itself, so quick repeated presses never race the settings echo.
+				if (options.mode === 'toggle' && self.commands.includes('togglesetting')) {
+					self.sendCommand('togglesetting', { key: options.feature })
+					return
+				}
 				const current = self.settings?.[options.feature]
 				if (options.mode === 'toggle' && current === undefined) {
 					self.log('warn', 'Not connected to PPTimer; cannot toggle')
 					return
 				}
 				const value = options.mode === 'toggle' ? !current : options.mode === 'on'
-				// The add-in has no toggle command, so record the new value right away: a second
+				// Older add-ins have no toggle command, so record the new value right away: a second
 				// press before the settings echo arrives then toggles back instead of repeating.
 				if (self.sendCommand('settings', { [options.feature]: value })) {
 					self.settings = { ...self.settings, [options.feature]: value }

@@ -2,7 +2,7 @@
 
 Controls **PPTimer**, which draws a countdown on top of the presenter view (visible to the
 presenter only, never on the audience screen): the PowerPoint add-in on Windows, or the PPTimer
-menu bar app on a Mac (Keynote and PowerPoint). Needs PPTimer 1.0.0 or later.
+menu bar app on a Mac (Keynote and PowerPoint). Needs PPTimer 1.0.0 or later; 1.0.3 or later is recommended so feature toggles stay correct when pressed quickly.
 
 ### Setup
 

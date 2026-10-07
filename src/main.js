@@ -14,6 +14,7 @@ export default class PPTimerInstance extends InstanceBase {
 		super(internal)
 		this.state = null
 		this.settings = null
+		this.commands = []
 		this.connection = null
 	}
 
@@ -109,6 +110,7 @@ export default class PPTimerInstance extends InstanceBase {
 		switch (msg.type) {
 			case 'hello':
 				this.settings = msg.settings
+				this.commands = Array.isArray(msg.commands) ? msg.commands : []
 				this.checkFeedbacks('feature')
 				this.log(
 					'info',
@@ -128,7 +130,7 @@ export default class PPTimerInstance extends InstanceBase {
 			case 'result':
 				if (!msg.ok) {
 					this.log('warn', `PPTimer rejected '${msg.cmd}': ${msg.error}`)
-					// Re-fetch settings to undo the value the feature action recorded ahead of the echo.
+					// Re-fetch settings to undo the value the feature action recorded ahead of the echo (add-ins before 1.0.3).
 					if (msg.cmd === 'settings') this.connection?.send({ cmd: 'settings' })
 				}
 				break
@@ -137,7 +139,10 @@ export default class PPTimerInstance extends InstanceBase {
 
 	setState(state) {
 		this.state = state
-		if (!state) this.settings = null
+		if (!state) {
+			this.settings = null
+			this.commands = []
+		}
 		this.setVariableValues(variableValuesFromState(state))
 		this.checkAllFeedbacks()
 	}
