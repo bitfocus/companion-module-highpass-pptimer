@@ -1,7 +1,8 @@
 /**
  * WebSocket link to the PPTimer add-in (Node 22's built-in WebSocket, no dependencies).
- * The add-in pushes {type:"state"} on every change plus a 5 s heartbeat; if nothing
- * arrives for 12 s the link is considered dead and re-opened.
+ * The add-in pushes {type:"state"} on every change plus a 5 s heartbeat (an unchanged state).
+ * Once a heartbeat has been seen, 12 s without data means the link is dead and it is re-opened.
+ * Until then there is no watchdog, so an add-in without a heartbeat is never dropped while idle.
  */
 export class TimerConnection {
 	constructor({ host, port, token, onStatus, onMessage, log }) {
@@ -14,6 +15,8 @@ export class TimerConnection {
 		this.retryTimer = null
 		this.watchdog = null
 		this.lastMessageAt = 0
+		this.heartbeatSeen = false
+		this.lastStateKey = null
 	}
 
 	open() {
@@ -47,11 +50,7 @@ export class TimerConnection {
 		// An unreachable host can leave the TCP connect hanging for a minute or more.
 		const connectTimer = setTimeout(() => fail('connect timeout'), 5000)
 
-		ws.addEventListener('open', () => {
-			if (this.ws !== ws) return
-			clearTimeout(connectTimer)
-			this.lastMessageAt = Date.now()
-			this.onStatus('ok')
+		const armWatchdog = () => {
 			clearInterval(this.watchdog)
 			this.watchdog = setInterval(() => {
 				if (Date.now() - this.lastMessageAt > 12000) {
@@ -59,6 +58,16 @@ export class TimerConnection {
 					fail('heartbeat timeout')
 				}
 			}, 3000)
+		}
+
+		ws.addEventListener('open', () => {
+			if (this.ws !== ws) return
+			clearTimeout(connectTimer)
+			this.lastMessageAt = Date.now()
+			this.lastStateKey = null
+			this.onStatus('ok')
+			// Known to send heartbeats from an earlier connection.
+			if (this.heartbeatSeen) armWatchdog()
 		})
 
 		ws.addEventListener('message', (event) => {
@@ -69,6 +78,15 @@ export class TimerConnection {
 				msg = JSON.parse(event.data)
 			} catch {
 				return
+			}
+			if (msg?.type === 'state' && !this.heartbeatSeen) {
+				// The add-in only repeats an unchanged state as its heartbeat.
+				const key = stateKey(msg)
+				if (key === this.lastStateKey) {
+					this.heartbeatSeen = true
+					armWatchdog()
+				}
+				this.lastStateKey = key
 			}
 			this.onMessage(msg)
 		})
@@ -103,4 +121,21 @@ export class TimerConnection {
 			// already closing
 		}
 	}
+}
+
+/** The fields the add-in compares to decide whether a state is new (its ChangeKey). */
+function stateKey(state) {
+	const { display, phase, running, visible, presenterView, presenterWidth, presenterHeight, durationMs, speedPercent } =
+		state
+	return JSON.stringify([
+		display,
+		phase,
+		running,
+		visible,
+		presenterView,
+		presenterWidth,
+		presenterHeight,
+		durationMs,
+		speedPercent,
+	])
 }

@@ -4,7 +4,7 @@ const DEFINITIONS = {
 	duration: { name: 'Duration (MM:SS)' },
 	duration_seconds: { name: 'Duration in seconds' },
 	progress_percent: { name: 'Remaining as % of duration' },
-	phase: { name: 'Phase (normal / warning / critical / expired)' },
+	phase: { name: 'Phase (normal / warning / critical / expired / offline)' },
 	status: { name: 'Status (running / paused / offline)' },
 	running: { name: 'Running (true / false)' },
 	overlay_visible: { name: 'Overlay visible (true / false)' },
@@ -35,12 +35,14 @@ export function variableValuesFromState(state) {
 		}
 	}
 	const speed = state.speedPercent ?? 100
+	// Older add-in builds may leave fields out; show them as empty rather than NaN.
+	const round = (value, scale) => (Number.isFinite(value) ? Math.round(value * scale) : undefined)
 	return {
 		remaining: state.display,
 		remaining_seconds: state.remainingSeconds,
 		duration: state.duration,
-		duration_seconds: Math.round(state.durationMs / 1000),
-		progress_percent: Math.round(state.progress * 100),
+		duration_seconds: round(state.durationMs, 1 / 1000),
+		progress_percent: round(state.progress, 100),
 		phase: state.phase,
 		status: state.running ? 'running' : 'paused',
 		running: state.running,

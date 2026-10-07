@@ -9,14 +9,16 @@ export const FEATURES = [
 	{ id: 'textOutline', label: 'Dark outline around digits' },
 ]
 
-/** "90", "3:00" or "1:05:00" to seconds; null if invalid. */
-function parseTime(text) {
+/** "90", "3:00" or "1:05:00" to whole seconds; null if empty or invalid (e.g. "1:", "5:75"). */
+export function parseTime(text) {
 	const parts = String(text ?? '')
 		.trim()
 		.split(':')
-		.map(Number)
-	if (!parts.length || parts.some((p) => !Number.isFinite(p) || p < 0)) return null
-	return Math.round(parts.reduce((total, p) => total * 60 + p, 0))
+	if (parts.length > 3 || parts.some((p) => !/^\d+$/.test(p))) return null
+	const numbers = parts.map(Number)
+	// Only the first part may be 60 or more ("90" or "90:00", not "5:75").
+	if (numbers.slice(1).some((n) => n >= 60)) return null
+	return numbers.reduce((total, n) => total * 60 + n, 0)
 }
 
 const TIME_TOOLTIP = 'Seconds ("90"), m:ss ("5:00") or h:mm:ss ("1:05:00")'
@@ -54,7 +56,12 @@ export function UpdateActions(self) {
 				},
 			],
 			callback: ({ options }) => {
-				const args = { time: String(options.time ?? '').trim() }
+				const seconds = parseTime(options.time)
+				if (seconds === null) {
+					self.log('warn', `Invalid duration: '${options.time}'`)
+					return
+				}
+				const args = { seconds }
 				if (options.start === 'start') args.start = true
 				if (options.start === 'pause') args.start = false
 				self.sendCommand('set', args)
@@ -77,10 +84,17 @@ export function UpdateActions(self) {
 				{ type: 'textinput', id: 'time', label: 'Amount', default: '1:00', tooltip: TIME_TOOLTIP },
 			],
 			callback: ({ options }) => {
-				const amount = String(options.time ?? '')
-					.trim()
-					.replace(/^[+-]/, '')
-				self.sendCommand('add', { time: (options.direction === 'subtract' ? '-' : '') + amount })
+				// The direction comes from the dropdown, so a typed sign is ignored.
+				const seconds = parseTime(
+					String(options.time ?? '')
+						.trim()
+						.replace(/^[+-]/, ''),
+				)
+				if (seconds === null) {
+					self.log('warn', `Invalid amount: '${options.time}'`)
+					return
+				}
+				self.sendCommand('add', { seconds: options.direction === 'subtract' ? -seconds : seconds })
 			},
 		},
 
@@ -99,7 +113,7 @@ export function UpdateActions(self) {
 						{ id: 'slower', label: 'Slower' },
 					],
 				},
-				{ type: 'number', id: 'step', label: 'Step (%)', default: 5, min: 0.1, max: 50, step: 0.5 },
+				{ type: 'number', id: 'step', label: 'Step (%)', default: 5, min: 0.5, max: 50, step: 0.5 },
 			],
 			callback: ({ options }) => {
 				const step = Math.abs(Number(options.step) || 0)
@@ -192,7 +206,12 @@ export function UpdateActions(self) {
 					return
 				}
 				const value = options.mode === 'toggle' ? !current : options.mode === 'on'
-				self.sendCommand('settings', { [options.feature]: value })
+				// The add-in has no toggle command, so record the new value right away: a second
+				// press before the settings echo arrives then toggles back instead of repeating.
+				if (self.sendCommand('settings', { [options.feature]: value })) {
+					self.settings = { ...self.settings, [options.feature]: value }
+					self.checkFeedbacks('feature')
+				}
 			},
 		},
 

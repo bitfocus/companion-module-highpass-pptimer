@@ -17,8 +17,9 @@ export default class PPTimerInstance extends InstanceBase {
 		this.connection = null
 	}
 
-	async init(config) {
+	async init(config, _isFirstInit, secrets) {
 		this.config = config
+		this.secrets = secrets ?? {}
 		this.updateActions()
 		this.updateFeedbacks()
 		this.updateVariableDefinitions()
@@ -31,9 +32,9 @@ export default class PPTimerInstance extends InstanceBase {
 		this.connection = null
 	}
 
-	async configUpdated(config) {
+	async configUpdated(config, secrets) {
 		this.config = config
-		this.updatePresets() // the connection label may have changed
+		this.secrets = secrets ?? {}
 		this.connect()
 	}
 
@@ -65,7 +66,7 @@ export default class PPTimerInstance extends InstanceBase {
 				max: 65535,
 			},
 			{
-				type: 'textinput',
+				type: 'secret-text',
 				id: 'token',
 				label: 'API token (leave empty if not set)',
 				width: 8,
@@ -89,7 +90,7 @@ export default class PPTimerInstance extends InstanceBase {
 		this.connection = new TimerConnection({
 			host,
 			port: this.config.port || 9595,
-			token: (this.config.token || '').trim(),
+			token: (this.secrets.token || '').trim(),
 			log: (level, msg) => this.log(level, msg),
 			onStatus: (status, message) => {
 				if (status === 'ok') {
@@ -125,7 +126,11 @@ export default class PPTimerInstance extends InstanceBase {
 				if (msg.event === 'zero') this.log('info', 'Countdown reached zero')
 				break
 			case 'result':
-				if (!msg.ok) this.log('warn', `PPTimer rejected '${msg.cmd}': ${msg.error}`)
+				if (!msg.ok) {
+					this.log('warn', `PPTimer rejected '${msg.cmd}': ${msg.error}`)
+					// Re-fetch settings to undo the value the feature action recorded ahead of the echo.
+					if (msg.cmd === 'settings') this.connection?.send({ cmd: 'settings' })
+				}
 				break
 		}
 	}
@@ -137,11 +142,14 @@ export default class PPTimerInstance extends InstanceBase {
 		this.checkAllFeedbacks()
 	}
 
-	/** Sends a command to the add-in, e.g. sendCommand('add', { seconds: 60 }). */
+	/**
+	 * Sends a command to the add-in, e.g. sendCommand('add', { seconds: 60 }).
+	 * @returns {boolean} whether it was sent
+	 */
 	sendCommand(cmd, args = {}) {
-		if (!this.connection?.send({ cmd, ...args })) {
-			this.log('warn', `Not connected to PPTimer; '${cmd}' dropped`)
-		}
+		if (this.connection?.send({ cmd, ...args })) return true
+		this.log('warn', `Not connected to PPTimer; '${cmd}' dropped`)
+		return false
 	}
 
 	updateActions() {
